@@ -1,0 +1,84 @@
+<resources>
+    <string name="app_name">StudentOrganizer</string>
+
+    <!-- Авторизация -->
+    <string name="login_title">Вход в систему</string>
+    <string name="login_subtitle">Добро пожаловать!</string>
+    <string name="login_email_hint">Email</string>
+    <string name="login_password_hint">Пароль</string>
+    <string name="login_button">Войти</string>
+    <string name="login_no_account">Нет аккаунта?</string>
+    <string name="login_register_link">Зарегистрироваться</string>
+    <string name="login_error_empty">Заполните все поля</string>
+    <string name="login_error_invalid_email">Некорректный email</string>
+
+    <!-- Регистрация -->
+    <string name="register_title">Регистрация</string>
+    <string name="register_subtitle">Создайте аккаунт</string>
+    <string name="register_fullname_hint">ФИО</string>
+    <string name="register_email_hint">Email</string>
+    <string name="register_password_hint">Пароль</string>
+    <string name="register_password_confirm_hint">Подтвердите пароль</string>
+    <string name="register_faculty_hint">Факультет</string>
+    <string name="register_course_hint">Курс</string>
+    <string name="register_university_hint">Выберите ВУЗ</string>
+    <string name="register_button">Зарегистрироваться</string>
+    <string name="register_has_account">Уже есть аккаунт?</string>
+    <string name="register_login_link">Войти</string>
+    <string name="register_error_passwords">Пароли не совпадают</string>
+    <string name="register_error_empty">Заполните все поля</string>
+
+    <!-- Профиль -->
+    <string name="profile_title">Личный кабинет</string>
+    <string name="profile_welcome">Добро пожаловать,</string>
+    <string name="profile_edit">Редактировать профиль</string>
+    <string name="profile_faculty">Факультет</string>
+    <string name="profile_course">Курс</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_university">ВУЗ</string>
+
+    <!-- Меню профиля -->
+    <string name="menu_contacts">Контакты ВУЗа</string>
+    <string name="menu_support">Поддержка</string>
+    <string name="menu_about">О нас</string>
+    <string name="menu_logout">Выйти</string>
+
+    <!-- Редактирование профиля -->
+    <string name="edit_profile_title">Редактирование профиля</string>
+    <string name="edit_profile_save">Сохранить</string>
+    <string name="edit_profile_success">Профиль обновлён</string>
+
+    <!-- Списки -->
+    <string-array name="courses">
+        <item>1 курс</item>
+        <item>2 курс</item>
+        <item>3 курс</item>
+        <item>4 курс</item>
+        <item>5 курс</item>
+        <item>6 курс</item>
+    </string-array>
+
+    <!-- Список ВУЗов -->
+    <string-array name="universities">
+        <item>Московский государственный университет им. М.В. Ломоносова (МГУ)</item>
+        <item>Санкт-Петербургский государственный университет (СПбГУ)</item>
+        <item>Московский физико-технический институт (МФТИ)</item>
+        <item>Национальный исследовательский ядерный университет «МИФИ»</item>
+        <item>Высшая школа экономики (НИУ ВШЭ)</item>
+        <item>Московский государственный технический университет им. Н.Э. Баумана (МГТУ)</item>
+        <item>Московский государственный институт международных отношений (МГИМО)</item>
+        <item>Российский экономический университет им. Г.В. Плеханова (РЭУ)</item>
+        <item>Финансовый университет при Правительстве РФ</item>
+        <item>Санкт-Петербургский политехнический университет Петра Великого (СПбПУ)</item>
+        <item>Новосибирский государственный университет (НГУ)</item>
+        <item>Томский государственный университет (ТГУ)</item>
+        <item>Казанский федеральный университет (КФУ)</item>
+        <item>Уральский федеральный университет (УрФУ)</item>
+        <item>Южный федеральный университет (ЮФУ)</item>
+        <item>Российский университет дружбы народов (РУДН)</item>
+        <item>Московский авиационный институт (МАИ)</item>
+        <item>Национальный исследовательский технологический университет «МИСиС»</item>
+        <item>ИТМО (Университет ИТМО)</item>
+        <item>Санкт-Петербургский государственный электротехнический университет (ЛЭТИ)</item>
+    </string-array>
+</resources>
