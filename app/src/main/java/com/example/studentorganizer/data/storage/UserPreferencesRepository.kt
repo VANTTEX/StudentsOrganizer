@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.studentorganizer.data.api.UserDto
 import com.example.studentorganizer.data.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -79,6 +80,25 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun logout() {
         context.dataStore.edit { prefs ->
             prefs[IS_LOGGED_IN] = false
+        }
+    }
+
+    suspend fun setLoggedIn(loggedIn: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[IS_LOGGED_IN] = loggedIn
+        }
+    }
+
+    suspend fun saveUserFromServer(userDto: UserDto) {
+        context.dataStore.edit { prefs ->
+            prefs[FULL_NAME] = userDto.fullName
+            prefs[EMAIL] = userDto.email
+            prefs[COURSE] = userDto.course ?: ""
+            prefs[UNIVERSITY] = userDto.institute ?: ""
+            // Пароль не сохраняем локально (он хеширован на сервере)
+            prefs[PASSWORD] = ""
+            prefs[FACULTY] = ""
+            prefs[AVATAR_URL] = ""
         }
     }
 

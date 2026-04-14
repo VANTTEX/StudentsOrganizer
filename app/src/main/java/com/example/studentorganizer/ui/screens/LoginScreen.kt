@@ -8,7 +8,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +28,8 @@ import com.example.studentorganizer.ui.theme.White
 fun LoginScreen(
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
-    error: String?
+    error: String?,
+    isLoading: Boolean
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -104,7 +104,8 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isLoading
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -121,7 +122,8 @@ fun LoginScreen(
                         shape = RoundedCornerShape(12.dp),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isLoading
                     )
 
                     if (error != null) {
@@ -143,9 +145,18 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DeepBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = DeepBlue),
+                        enabled = !isLoading
                     ) {
-                        Text("Войти", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Войти", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -181,6 +192,7 @@ fun LoginScreenPreview() {
     LoginScreen(
         onLogin = { _, _ -> },
         onNavigateToRegister = {},
-        error = null
+        error = null,
+        isLoading = false
     )
 }
