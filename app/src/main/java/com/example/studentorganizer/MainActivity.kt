@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.studentorganizer.data.repository.AuthRepository
 import com.example.studentorganizer.data.storage.UserPreferencesRepository
 import com.example.studentorganizer.navigation.Screen
 import com.example.studentorganizer.ui.screens.*
@@ -25,15 +26,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             StudentOrganizerTheme {
                 val navController = rememberNavController()
-                val repository = UserPreferencesRepository(this)
+                val prefsRepository = UserPreferencesRepository(this)
+                val authRepository = AuthRepository(prefsRepository = prefsRepository)
+                
                 val viewModel: AuthViewModel = viewModel {
-                    AuthViewModel(repository)
+                    AuthViewModel(authRepository, prefsRepository)
                 }
 
                 val isLoggedIn by viewModel.isLoggedIn.collectAsState()
                 val user by viewModel.user.collectAsState()
                 val loginError by viewModel.loginError.collectAsState()
                 val registerError by viewModel.registerError.collectAsState()
+                val isLoading by viewModel.isLoading.collectAsState()
 
                 AppNavigation(
                     navController = navController,
@@ -41,6 +45,7 @@ class MainActivity : ComponentActivity() {
                     user = user,
                     loginError = loginError,
                     registerError = registerError,
+                    isLoading = isLoading,
                     onLogin = viewModel::login,
                     onRegister = viewModel::register,
                     onUpdateProfile = viewModel::updateProfile,
@@ -59,13 +64,23 @@ fun AppNavigation(
     user: com.example.studentorganizer.data.model.User,
     loginError: String?,
     registerError: String?,
+    isLoading: Boolean,
     onLogin: (String, String) -> Unit,
-    onRegister: (com.example.studentorganizer.data.model.User, String) -> Unit,
+    onRegister: (String, String, String, String?, String?, String) -> Unit,
     onUpdateProfile: (com.example.studentorganizer.data.model.User) -> Unit,
     onLogout: () -> Unit,
     onClearErrors: () -> Unit
 ) {
     var startDestination = if (isLoggedIn) Screen.Profile.route else Screen.Login.route
+
+    LaunchedEffect(isLoggedIn) {
+        val currentRoute = navController.currentDestination?.route
+        if (isLoggedIn && (currentRoute == Screen.Login.route || currentRoute == Screen.Register.route)) {
+            navController.navigate(Screen.Profile.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -73,35 +88,27 @@ fun AppNavigation(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLogin = { email, password ->
-                    onLogin(email, password)
-                    navController.navigate(Screen.Profile.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                },
+                onLogin = onLogin,
                 onNavigateToRegister = {
                     onClearErrors()
                     navController.navigate(Screen.Register.route)
                 },
-                error = loginError
+                error = loginError,
+                isLoading = isLoading
             )
         }
 
         composable(Screen.Register.route) {
             RegisterScreen(
-                onRegister = { newUser, confirmPassword ->
-                    onRegister(newUser, confirmPassword)
-                    navController.navigate(Screen.Profile.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
-                    }
-                },
+                onRegister = onRegister,
                 onNavigateToLogin = {
                     onClearErrors()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
-                error = registerError
+                error = registerError,
+                isLoading = isLoading
             )
         }
 

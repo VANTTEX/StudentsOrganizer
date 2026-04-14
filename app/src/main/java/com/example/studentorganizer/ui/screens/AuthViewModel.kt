@@ -1,8 +1,13 @@
 package com.example.studentorganizer.ui.screens
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.studentorganizer.data.model.User
+import com.example.studentorganizer.data.repository.AuthRepository
+import com.example.studentorganizer.data.repository.ValidationUtil
 import com.example.studentorganizer.data.storage.UserPreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,7 +15,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class AuthViewModel(private val repository: UserPreferencesRepository) : ViewModel() {
+class AuthViewModel(
+    private val repository: AuthRepository,
+    private val prefsRepository: UserPreferencesRepository
+) : ViewModel() {
 
     private val _user = MutableStateFlow(User())
     val user: StateFlow<User> = _user.asStateFlow()
@@ -24,64 +32,126 @@ class AuthViewModel(private val repository: UserPreferencesRepository) : ViewMod
     private val _registerError = MutableStateFlow<String?>(null)
     val registerError: StateFlow<String?> = _registerError.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         viewModelScope.launch {
-            repository.isLoggedInFlow.collect { loggedIn ->
+            prefsRepository.isLoggedInFlow.collect { loggedIn ->
                 _isLoggedIn.value = loggedIn
             }
         }
         viewModelScope.launch {
-            repository.userFlow.collect { user ->
+            prefsRepository.userFlow.collect { user ->
                 _user.value = user
             }
         }
     }
 
     fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            _loginError.value = "Заполните все поля"
+        // Локальная валидация
+        val emailError = ValidationUtil.validateEmail(email)
+        if (emailError != null) {
+            _loginError.value = emailError
             return
         }
+
+        val passwordError = ValidationUtil.validatePassword(password)
+        if (passwordError != null) {
+            _loginError.value = passwordError
+            return
+        }
+
+        _isLoading.value = true
+        _loginError.value = null
+
         viewModelScope.launch {
-            repository.loginUser(email, password)
-            _loginError.value = null
+            val result = repository.login(email, password)
+            _isLoading.value = false
+
+            result.fold(
+                onSuccess = { _loginError.value = null },
+                onFailure = { _loginError.value = it.message }
+            )
         }
     }
 
-    fun register(user: User, confirmPassword: String) {
-        if (user.fullName.isBlank() || user.email.isBlank() || user.password.isBlank() ||
-            user.faculty.isBlank() || user.course.isBlank() || user.university.isBlank()) {
-            _registerError.value = "Заполните все поля"
+    fun register(
+        email: String,
+        password: String,
+        fullName: String,
+        course: String?,
+        institute: String?,
+        confirmPassword: String
+    ) {
+        // Локальная валидация
+        val emailError = ValidationUtil.validateEmail(email)
+        if (emailError != null) {
+            _registerError.value = emailError
             return
         }
-        if (user.password != confirmPassword) {
-            _registerError.value = "Пароли не совпадают"
+
+        val passwordError = ValidationUtil.validatePassword(password)
+        if (passwordError != null) {
+            _registerError.value = passwordError
             return
         }
+
+        val fullNameError = ValidationUtil.validateFullName(fullName)
+        if (fullNameError != null) {
+            _registerError.value = fullNameError
+            return
+        }
+
+        val matchError = ValidationUtil.validatePasswordMatch(password, confirmPassword)
+        if (matchError != null) {
+            _registerError.value = matchError
+            return
+        }
+
+        _isLoading.value = true
+        _registerError.value = null
+
         viewModelScope.launch {
-            repository.saveUser(user)
-            _registerError.value = null
+            val result = repository.register(email, password, fullName, course, institute)
+            _isLoading.value = false
+
+            result.fold(
+                onSuccess = { _registerError.value = null },
+                onFailure = { _registerError.value = it.message }
+            )
         }
     }
 
     fun updateProfile(user: User) {
         viewModelScope.launch {
-            repository.updateUser(user)
+            prefsRepository.updateUser(user)
         }
     }
 
     suspend fun getUserData(): User {
-        return repository.userFlow.first()
+        return prefsRepository.userFlow.first()
     }
 
     fun logout() {
         viewModelScope.launch {
-            repository.logout()
+            prefsRepository.logout()
         }
     }
 
     fun clearErrors() {
         _loginError.value = null
         _registerError.value = null
+    }
+
+    companion object {
+        fun factory(
+            repository: AuthRepository,
+            prefsRepository: UserPreferencesRepository
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                AuthViewModel(repository, prefsRepository)
+            }
+        }
     }
 }

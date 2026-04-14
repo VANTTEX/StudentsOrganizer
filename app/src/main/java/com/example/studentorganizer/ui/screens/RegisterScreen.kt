@@ -24,49 +24,39 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.studentorganizer.data.model.User
 import com.example.studentorganizer.ui.theme.DeepBlue
 import com.example.studentorganizer.ui.theme.White
 
 @Composable
 fun RegisterScreen(
-    onRegister: (User, String) -> Unit,
+    onRegister: (String, String, String, String?, String?, String) -> Unit,
     onNavigateToLogin: () -> Unit,
-    error: String?
+    error: String?,
+    isLoading: Boolean
 ) {
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var faculty by remember { mutableStateOf("") }
     var course by remember { mutableStateOf("") }
-    var university by remember { mutableStateOf("") }
-    var showUniversityDropdown by remember { mutableStateOf(false) }
+    var institute by remember { mutableStateOf("") }
+    var showInstituteDropdown by remember { mutableStateOf(false) }
     var showCourseDropdown by remember { mutableStateOf(false) }
 
-    val universities = listOf(
-        "МГУ им. М.В. Ломоносова",
-        "СПбГУ",
-        "МФТИ",
-        "НИУ ВШЭ",
-        "МГТУ им. Н.Э. Баумана",
-        "МГИМО",
-        "РЭУ им. Г.В. Плеханова",
-        "Финансовый университет",
-        "СПбПУ",
-        "НГУ",
-        "ТГУ",
-        "КФУ",
-        "УрФУ",
-        "ЮФУ",
-        "РУДН",
-        "МАИ",
-        "НИТУ МИСиС",
-        "Университет ИТМО",
-        "ЛЭТИ"
+    val institutes = listOf(
+        "Институт математики и компьютерных наук",
+        "Институт физики",
+        "Институт химии",
+        "Институт биологии",
+        "Экономический институт",
+        "Институт права",
+        "Гуманитарный институт",
+        "Институт информационных технологий",
+        "Институт иностранных языков",
+        "Политехнический институт"
     )
 
-    val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс", "6 курс")
+    val courses = listOf("1", "2", "3", "4", "5", "6")
 
     Box(
         modifier = Modifier
@@ -112,42 +102,35 @@ fun RegisterScreen(
                             .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // ФИО
-                        OutlinedTextField(
-                            value = fullName,
-                            onValueChange = { fullName = it },
-                            label = { Text("ФИО") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = DeepBlue) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Email
+                        // Email (обязательно)
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Email") },
+                            label = { Text("Email *") },
                             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = DeepBlue) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            singleLine = true
+                            singleLine = true,
+                            enabled = !isLoading
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Пароль
+                        // Пароль (обязательно)
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Пароль") },
+                            label = { Text("Пароль *") },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = DeepBlue) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true
+                            singleLine = true,
+                            enabled = !isLoading,
+                            supportingText = {
+                                Text("Минимум 8 символов, буква и цифра", fontSize = 11.sp, color = Color.Gray)
+                            }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -155,43 +138,46 @@ fun RegisterScreen(
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
-                            label = { Text("Подтвердите пароль") },
+                            label = { Text("Подтвердите пароль *") },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = DeepBlue) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true
+                            singleLine = true,
+                            enabled = !isLoading
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Факультет
+                        // ФИО (обязательно)
                         OutlinedTextField(
-                            value = faculty,
-                            onValueChange = { faculty = it },
-                            label = { Text("Факультет") },
-                            leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = { Text("ФИО *") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = DeepBlue) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            singleLine = true
+                            singleLine = true,
+                            enabled = !isLoading
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Курс (Dropdown)
+                        // Курс (опционально, Dropdown)
                         Box {
                             OutlinedTextField(
                                 value = course,
                                 onValueChange = {},
-                                label = { Text("Курс") },
+                                label = { Text("Курс (по желанию)") },
                                 leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { showCourseDropdown = true },
+                                    .clickable(enabled = !isLoading) { showCourseDropdown = true },
                                 shape = RoundedCornerShape(12.dp),
                                 readOnly = true,
                                 trailingIcon = {
                                     Text("▼", color = DeepBlue)
-                                }
+                                },
+                                enabled = !isLoading
                             )
                             DropdownMenu(
                                 expanded = showCourseDropdown,
@@ -200,7 +186,7 @@ fun RegisterScreen(
                             ) {
                                 courses.forEach { c ->
                                     DropdownMenuItem(
-                                        text = { Text(c) },
+                                        text = { Text("$c курс") },
                                         onClick = {
                                             course = c
                                             showCourseDropdown = false
@@ -211,33 +197,34 @@ fun RegisterScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // ВУЗ (Dropdown)
+                        // Институт (опционально, Dropdown)
                         Box {
                             OutlinedTextField(
-                                value = university,
+                                value = institute,
                                 onValueChange = {},
-                                label = { Text("ВУЗ") },
+                                label = { Text("Институт (по желанию)") },
                                 leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { showUniversityDropdown = true },
+                                    .clickable(enabled = !isLoading) { showInstituteDropdown = true },
                                 shape = RoundedCornerShape(12.dp),
                                 readOnly = true,
                                 trailingIcon = {
                                     Text("▼", color = DeepBlue)
-                                }
+                                },
+                                enabled = !isLoading
                             )
                             DropdownMenu(
-                                expanded = showUniversityDropdown,
-                                onDismissRequest = { showUniversityDropdown = false },
+                                expanded = showInstituteDropdown,
+                                onDismissRequest = { showInstituteDropdown = false },
                                 modifier = Modifier.background(White)
                             ) {
-                                universities.forEach { u ->
+                                institutes.forEach { inst ->
                                     DropdownMenuItem(
-                                        text = { Text(u, fontSize = 12.sp) },
+                                        text = { Text(inst, fontSize = 12.sp) },
                                         onClick = {
-                                            university = u
-                                            showUniversityDropdown = false
+                                            institute = inst
+                                            showInstituteDropdown = false
                                         }
                                     )
                                 }
@@ -259,23 +246,24 @@ fun RegisterScreen(
                         // Кнопка регистрации
                         Button(
                             onClick = {
-                                val user = User(
-                                    fullName = fullName,
-                                    email = email,
-                                    password = password,
-                                    faculty = faculty,
-                                    course = course,
-                                    university = university
-                                )
-                                onRegister(user, confirmPassword)
+                                onRegister(email, password, fullName, course, institute, confirmPassword)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = DeepBlue)
+                            colors = ButtonDefaults.buttonColors(containerColor = DeepBlue),
+                            enabled = !isLoading
                         ) {
-                            Text("Зарегистрироваться", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Зарегистрироваться", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -296,7 +284,7 @@ fun RegisterScreen(
                                 fontSize = 14.sp,
                                 color = DeepBlue,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.clickable { onNavigateToLogin() }
+                                modifier = Modifier.clickable(enabled = !isLoading) { onNavigateToLogin() }
                             )
                         }
                     }
@@ -311,8 +299,9 @@ fun RegisterScreen(
 @Composable
 fun RegisterScreenPreview() {
     RegisterScreen(
-        onRegister = { _, _ -> },
+        onRegister = { _, _, _, _, _, _ -> },
         onNavigateToLogin = {},
-        error = null
+        error = null,
+        isLoading = false
     )
 }
