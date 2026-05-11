@@ -50,7 +50,9 @@ class MainActivity : ComponentActivity() {
                     isLoading = isLoading,
                     isUploadingAvatar = isUploadingAvatar,
                     universities = universities,
-                    onLogin = viewModel::login,
+                    onLogin = { email, password, _, _, _, _ ->
+                        viewModel.login(email, password)
+                    },
                     onRegister = viewModel::register,
                     onUpdateProfile = viewModel::updateProfile,
                     onAvatarSelected = { uri -> viewModel.uploadAvatar(uri, this@MainActivity) },
@@ -73,7 +75,7 @@ fun AppNavigation(
     isLoading: Boolean,
     isUploadingAvatar: Boolean = false,
     universities: List<com.example.studentorganizer.data.api.UniversityDto> = emptyList(),
-    onLogin: (String, String) -> Unit,
+    onLogin: (String, String, String, String?, String?, String) -> Unit,
     onRegister: (String, String, String, String?, String?, String) -> Unit,
     onUpdateProfile: (com.example.studentorganizer.data.model.User) -> Unit,
     onAvatarSelected: (android.net.Uri) -> Unit = {},
@@ -98,7 +100,9 @@ fun AppNavigation(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLogin = onLogin,
+                onLogin = { email, password ->
+                    onLogin(email, password, "", null, null, "")
+                },
                 onNavigateToRegister = {
                     onClearErrors()
                     navController.navigate(Screen.Register.route)
