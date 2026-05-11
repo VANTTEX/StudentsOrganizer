@@ -4,6 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Task
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -15,6 +25,7 @@ import com.example.studentorganizer.data.storage.UserPreferencesRepository
 import com.example.studentorganizer.navigation.Screen
 import com.example.studentorganizer.ui.screens.*
 import com.example.studentorganizer.ui.screens.subscreens.AboutScreen
+import com.example.studentorganizer.ui.screens.subscreens.NotificationsScreen
 import com.example.studentorganizer.ui.screens.subscreens.SupportScreen
 import com.example.studentorganizer.ui.screens.subscreens.UniversityContactsScreen
 import com.example.studentorganizer.ui.theme.StudentOrganizerTheme
@@ -83,7 +94,7 @@ fun AppNavigation(
     onLogout: () -> Unit,
     onClearErrors: () -> Unit
 ) {
-    var startDestination = if (isLoggedIn) Screen.Profile.route else Screen.Login.route
+    val startDestination = if (isLoggedIn) Screen.Schedule.route else Screen.Login.route
 
     LaunchedEffect(isLoggedIn) {
         val currentRoute = navController.currentDestination?.route
@@ -126,21 +137,41 @@ fun AppNavigation(
             )
         }
 
+        composable(Screen.Schedule.route) {
+            MainTabsScaffold(navController = navController, selectedRoute = Screen.Schedule.route) {
+                ScheduleScreen()
+            }
+        }
+
+        composable(Screen.Tasks.route) {
+            MainTabsScaffold(navController = navController, selectedRoute = Screen.Tasks.route) {
+                TasksScreen()
+            }
+        }
+
+        composable(Screen.Notes.route) {
+            MainTabsScaffold(navController = navController, selectedRoute = Screen.Notes.route) {
+                NotesScreen()
+            }
+        }
+
         composable(Screen.Profile.route) {
-            ProfileScreen(
-                user = user,
-                onNotificationsClick = { navController.navigate(Screen.Support.route) },
-                onEditProfile = { navController.navigate(Screen.EditProfile.route) },
-                onUniversityContacts = { navController.navigate(Screen.UniversityContacts.route) },
-                onSupport = { navController.navigate(Screen.Support.route) },
-                onAbout = { navController.navigate(Screen.About.route) },
-                onLogout = {
-                    onLogout()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Profile.route) { inclusive = true }
+            MainTabsScaffold(navController = navController, selectedRoute = Screen.Profile.route) {
+                ProfileScreen(
+                    user = user,
+                    onNotificationsClick = { navController.navigate(Screen.Notifications.route) },
+                    onEditProfile = { navController.navigate(Screen.EditProfile.route) },
+                    onUniversityContacts = { navController.navigate(Screen.UniversityContacts.route) },
+                    onSupport = { navController.navigate(Screen.Support.route) },
+                    onAbout = { navController.navigate(Screen.About.route) },
+                    onLogout = {
+                        onLogout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Profile.route) { inclusive = true }
+                        }
                     }
-                }
-            )
+                )
+            }
         }
 
         composable(Screen.EditProfile.route) {
@@ -167,8 +198,50 @@ fun AppNavigation(
             SupportScreen(onNavigateBack = { navController.popBackStack() })
         }
 
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
         composable(Screen.About.route) {
             AboutScreen(onNavigateBack = { navController.popBackStack() })
         }
+    }
+}
+
+@Composable
+private fun MainTabsScaffold(
+    navController: NavHostController,
+    selectedRoute: String,
+    content: @Composable () -> Unit
+) {
+    val tabs = listOf(
+        Triple(Screen.Schedule.route, "Расписание", Icons.Default.DateRange),
+        Triple(Screen.Tasks.route, "Задания", Icons.Default.Task),
+        Triple(Screen.Notes.route, "Заметки", Icons.Default.Description),
+        Triple(Screen.Profile.route, "Настройки", Icons.Default.Person)
+    )
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                tabs.forEach { (route, label, icon) ->
+                    NavigationBarItem(
+                        selected = selectedRoute == route,
+                        onClick = {
+                            if (selectedRoute != route) {
+                                navController.navigate(route) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        },
+                        icon = { Icon(icon, contentDescription = label) },
+                        label = { Text(label) }
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.padding(padding)
+        ) { content() }
     }
 }
