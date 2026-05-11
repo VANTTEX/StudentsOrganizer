@@ -10,7 +10,7 @@ object RetrofitClient {
     
     // Для эмулятора Android: 10.0.2.2 localhost хост-машины
     // Для реального устройства: IP-адрес компьютера
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    internal const val BASE_URL = "http://10.0.2.2:8080/"
     
     val api: AuthApi by lazy {
         val logging = HttpLoggingInterceptor().apply {

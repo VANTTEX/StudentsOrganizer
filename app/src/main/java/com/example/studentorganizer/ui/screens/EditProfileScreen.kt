@@ -1,8 +1,13 @@
 package com.example.studentorganizer.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,11 +16,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.studentorganizer.data.api.UniversityDto
 import com.example.studentorganizer.data.model.User
 import com.example.studentorganizer.ui.theme.DeepBlue
 import com.example.studentorganizer.ui.theme.White
@@ -26,7 +36,11 @@ fun EditProfileScreen(
     user: User,
     onSave: (User) -> Unit,
     onNavigateBack: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    onAvatarSelected: (Uri) -> Unit = {},
+    universities: List<UniversityDto> = emptyList(),
+    onSearchUniversities: (String) -> Unit = {},
+    isUploadingAvatar: Boolean = false
 ) {
     var fullName by remember { mutableStateOf(user.fullName) }
     var faculty by remember { mutableStateOf(user.faculty) }
@@ -34,29 +48,28 @@ fun EditProfileScreen(
     var university by remember { mutableStateOf(user.university) }
     var showCourseDropdown by remember { mutableStateOf(false) }
     var showUniversityDropdown by remember { mutableStateOf(false) }
+    var universitySearchQuery by remember { mutableStateOf("") }
 
     val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс", "6 курс")
-    val universities = listOf(
-        "МГУ им. М.В. Ломоносова",
-        "СПбГУ",
-        "МФТИ",
-        "НИУ ВШЭ",
-        "МГТУ им. Н.Э. Баумана",
-        "МГИМО",
-        "РЭУ им. Г.В. Плеханова",
-        "Финансовый университет",
-        "СПбПУ",
-        "НГУ",
-        "ТГУ",
-        "КФУ",
-        "УрФУ",
-        "ЮФУ",
-        "РУДН",
-        "МАИ",
-        "НИТУ МИСиС",
-        "Университет ИТМО",
-        "ЛЭТИ"
-    )
+
+    // Лаунчер для выбора изображения
+    val avatarPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onAvatarSelected(it) }
+    }
+
+    // Фильтрация ВУЗов по поиску
+    val filteredUniversities = remember(universities, universitySearchQuery) {
+        if (universitySearchQuery.isBlank()) {
+            universities.take(50) // Показываем первые 50
+        } else {
+            universities.filter {
+                it.name.contains(universitySearchQuery, ignoreCase = true) ||
+                it.city.contains(universitySearchQuery, ignoreCase = true)
+            }.take(50)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -93,21 +106,63 @@ fun EditProfileScreen(
                     Box(
                         modifier = Modifier
                             .size(100.dp)
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
-                                ),
-                                shape = RoundedCornerShape(50)
-                            ),
+                            .clickable { avatarPickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Аватар",
-                            tint = White,
-                            modifier = Modifier.size(50.dp)
-                        )
+                        if (user.avatarUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = user.avatarUrl,
+                                contentDescription = "Аватар",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.LightGray),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                                        ),
+                                        shape = RoundedCornerShape(50)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = "Аватар",
+                                    tint = White,
+                                    modifier = Modifier.size(50.dp)
+                                )
+                            }
+                        }
+                        // Индикатор загрузки
+                        if (isUploadingAvatar) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(30.dp),
+                                    color = White,
+                                    strokeWidth = 3.dp
+                                )
+                            }
+                        }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Нажмите для выбора фото",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
             }
 
@@ -200,31 +255,46 @@ fun EditProfileScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // ВУЗ (Dropdown)
-                        Box {
-                            OutlinedTextField(
-                                value = university,
-                                onValueChange = {},
-                                label = { Text("ВУЗ") },
-                                leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                readOnly = true,
-                                trailingIcon = { Text("▼", color = DeepBlue) }
-                            )
-                            DropdownMenu(
-                                expanded = showUniversityDropdown,
-                                onDismissRequest = { showUniversityDropdown = false }
-                            ) {
-                                universities.forEach { u ->
-                                    DropdownMenuItem(
-                                        text = { Text(u, fontSize = 12.sp) },
-                                        onClick = {
-                                            university = u
-                                            showUniversityDropdown = false
-                                        }
-                                    )
+                        // ВУЗ (TextField с поиском и Dropdown)
+                        OutlinedTextField(
+                            value = university,
+                            onValueChange = { 
+                                university = it
+                                universitySearchQuery = it
+                                onSearchUniversities(it)
+                                showUniversityDropdown = true
+                            },
+                            label = { Text("ВУЗ (поиск)") },
+                            leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = { showUniversityDropdown = !showUniversityDropdown }) {
+                                    Icon(Icons.Default.Search, contentDescription = "Поиск", tint = DeepBlue)
                                 }
+                            }
+                        )
+
+                        DropdownMenu(
+                            expanded = showUniversityDropdown && filteredUniversities.isNotEmpty(),
+                            onDismissRequest = { showUniversityDropdown = false },
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            filteredUniversities.forEach { u ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Column {
+                                            Text(u.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            Text("${u.city}, ${u.type}", fontSize = 11.sp, color = Color.Gray)
+                                        }
+                                    },
+                                    onClick = {
+                                        university = u.name
+                                        universitySearchQuery = ""
+                                        showUniversityDropdown = false
+                                    }
+                                )
                             }
                         }
                     }

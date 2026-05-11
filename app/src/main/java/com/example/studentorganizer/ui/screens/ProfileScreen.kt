@@ -18,9 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.studentorganizer.data.model.User
 import com.example.studentorganizer.ui.theme.DeepBlue
 import com.example.studentorganizer.ui.theme.LightBlue
@@ -109,12 +111,23 @@ fun ProfileScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Аватар",
-                            tint = White,
-                            modifier = Modifier.size(50.dp)
-                        )
+                        if (user.avatarUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = user.avatarUrl,
+                                contentDescription = "Аватар",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Аватар",
+                                tint = White,
+                                modifier = Modifier.size(50.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -178,6 +191,50 @@ fun ProfileScreen(
                     ProfileInfoRow(Icons.Default.DateRange, "Курс", user.course)
                     Divider(modifier = Modifier.padding(vertical = 8.dp))
                     ProfileInfoRow(Icons.Default.Email, "Email", user.email)
+                }
+            }
+        }
+
+        // Карточка с Friend ID
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.QrCode,
+                            contentDescription = null,
+                            tint = DeepBlue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Ваш ID для друзей",
+                                fontSize = 12.sp,
+                                color = Color(0xFF8892B0)
+                            )
+                            Text(
+                                text = user.friendId.ifEmpty { "— — —" },
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = DeepBlue
+                            )
+                        }
+                    }
                 }
             }
         }

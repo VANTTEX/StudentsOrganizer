@@ -107,4 +107,22 @@ class UserPreferencesRepository(private val context: Context) {
             prefs.clear()
         }
     }
+
+    suspend fun updateAvatarUrl(url: String) {
+        context.dataStore.edit { prefs ->
+            prefs[AVATAR_URL] = url
+        }
+    }
+
+    suspend fun saveUserFromServer(userDto: UserDto, password: String = "") {
+        context.dataStore.edit { prefs ->
+            prefs[FULL_NAME] = userDto.fullName
+            prefs[EMAIL] = userDto.email
+            prefs[COURSE] = userDto.course ?: ""
+            prefs[UNIVERSITY] = userDto.institute ?: ""
+            prefs[PASSWORD] = password
+            prefs[FACULTY] = ""
+            prefs[AVATAR_URL] = userDto.avatarUrl ?: ""
+        }
+    }
 }
