@@ -38,7 +38,6 @@ data class MenuItem(
 @Composable
 fun ProfileScreen(
     user: User,
-    onMenuClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onEditProfile: () -> Unit,
     onUniversityContacts: () -> Unit,
@@ -46,6 +45,8 @@ fun ProfileScreen(
     onAbout: () -> Unit,
     onLogout: () -> Unit
 ) {
+    var showTopMenu by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -75,13 +76,48 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = onMenuClick) {
-                            Icon(
-                                Icons.Default.Menu,
-                                contentDescription = "Меню",
-                                tint = White,
-                                modifier = Modifier.size(28.dp)
-                            )
+                        Box {
+                            IconButton(onClick = { showTopMenu = true }) {
+                                Icon(
+                                    Icons.Default.Menu,
+                                    contentDescription = "Меню",
+                                    tint = White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showTopMenu,
+                                onDismissRequest = { showTopMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Контакты ВУЗа") },
+                                    onClick = {
+                                        showTopMenu = false
+                                        onUniversityContacts()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Поддержка") },
+                                    onClick = {
+                                        showTopMenu = false
+                                        onSupport()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("О нас") },
+                                    onClick = {
+                                        showTopMenu = false
+                                        onAbout()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Выйти") },
+                                    onClick = {
+                                        showTopMenu = false
+                                        onLogout()
+                                    }
+                                )
+                            }
                         }
                         Text(
                             text = "Личный кабинет",
@@ -407,7 +443,6 @@ fun ProfileScreenPreview() {
             email = "kosinov@university.ru",
             university = "КФУ"
         ),
-        onMenuClick = {},
         onNotificationsClick = {},
         onEditProfile = {},
         onUniversityContacts = {},

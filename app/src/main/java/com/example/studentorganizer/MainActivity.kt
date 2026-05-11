@@ -129,7 +129,6 @@ fun AppNavigation(
         composable(Screen.Profile.route) {
             ProfileScreen(
                 user = user,
-                onMenuClick = { navController.navigate(Screen.EditProfile.route) },
                 onNotificationsClick = { navController.navigate(Screen.Support.route) },
                 onEditProfile = { navController.navigate(Screen.EditProfile.route) },
                 onUniversityContacts = { navController.navigate(Screen.UniversityContacts.route) },
