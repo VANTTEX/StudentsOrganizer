@@ -20,7 +20,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.studentorganizer.data.model.defaultNotes
+import com.example.studentorganizer.data.model.defaultSchedule
+import com.example.studentorganizer.data.model.defaultTasks
 import com.example.studentorganizer.data.repository.AuthRepository
+import com.example.studentorganizer.data.storage.StudyDataRepository
 import com.example.studentorganizer.data.storage.UserPreferencesRepository
 import com.example.studentorganizer.navigation.Screen
 import com.example.studentorganizer.ui.screens.*
@@ -29,6 +33,7 @@ import com.example.studentorganizer.ui.screens.subscreens.NotificationsScreen
 import com.example.studentorganizer.ui.screens.subscreens.SupportScreen
 import com.example.studentorganizer.ui.screens.subscreens.UniversityContactsScreen
 import com.example.studentorganizer.ui.theme.StudentOrganizerTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,6 +100,12 @@ fun AppNavigation(
     onClearErrors: () -> Unit
 ) {
     val startDestination = if (isLoggedIn) Screen.Schedule.route else Screen.Login.route
+    val studyDataRepository = remember { StudyDataRepository(navController.context) }
+    val coroutineScope = rememberCoroutineScope()
+    val tasks by studyDataRepository.tasksFlow.collectAsState(initial = defaultTasks())
+    val schedule by studyDataRepository.scheduleFlow.collectAsState(initial = defaultSchedule())
+    val notes by studyDataRepository.notesFlow.collectAsState(initial = defaultNotes())
+    var tasksFilterSubject by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(isLoggedIn) {
         val currentRoute = navController.currentDestination?.route
@@ -139,19 +150,64 @@ fun AppNavigation(
 
         composable(Screen.Schedule.route) {
             MainTabsScaffold(navController = navController, selectedRoute = Screen.Schedule.route) {
-                ScheduleScreen()
+                ScheduleScreen(
+                    lessons = schedule,
+                    onAdd = { item ->
+                        coroutineScope.launch { studyDataRepository.saveSchedule(schedule + item) }
+                    },
+                    onUpdate = { item ->
+                        coroutineScope.launch {
+                            studyDataRepository.saveSchedule(schedule.map { if (it.id == item.id) item else it })
+                        }
+                    },
+                    onDelete = { id ->
+                        coroutineScope.launch { studyDataRepository.saveSchedule(schedule.filterNot { it.id == id }) }
+                    },
+                    onSubjectClick = { subject ->
+                        tasksFilterSubject = subject
+                        navController.navigate(Screen.Tasks.route)
+                    }
+                )
             }
         }
 
         composable(Screen.Tasks.route) {
             MainTabsScaffold(navController = navController, selectedRoute = Screen.Tasks.route) {
-                TasksScreen()
+                TasksScreen(
+                    tasks = tasks,
+                    filterSubject = tasksFilterSubject,
+                    onClearFilter = { tasksFilterSubject = null },
+                    onAdd = { item ->
+                        coroutineScope.launch { studyDataRepository.saveTasks(tasks + item) }
+                    },
+                    onUpdate = { item ->
+                        coroutineScope.launch {
+                            studyDataRepository.saveTasks(tasks.map { if (it.id == item.id) item else it })
+                        }
+                    },
+                    onDelete = { id ->
+                        coroutineScope.launch { studyDataRepository.saveTasks(tasks.filterNot { it.id == id }) }
+                    }
+                )
             }
         }
 
         composable(Screen.Notes.route) {
             MainTabsScaffold(navController = navController, selectedRoute = Screen.Notes.route) {
-                NotesScreen()
+                NotesScreen(
+                    notes = notes,
+                    onAdd = { item ->
+                        coroutineScope.launch { studyDataRepository.saveNotes(notes + item) }
+                    },
+                    onUpdate = { item ->
+                        coroutineScope.launch {
+                            studyDataRepository.saveNotes(notes.map { if (it.id == item.id) item else it })
+                        }
+                    },
+                    onDelete = { id ->
+                        coroutineScope.launch { studyDataRepository.saveNotes(notes.filterNot { it.id == id }) }
+                    }
+                )
             }
         }
 
