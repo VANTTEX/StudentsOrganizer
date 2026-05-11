@@ -38,6 +38,8 @@ data class MenuItem(
 @Composable
 fun ProfileScreen(
     user: User,
+    onMenuClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     onEditProfile: () -> Unit,
     onUniversityContacts: () -> Unit,
     onSupport: () -> Unit,
@@ -73,7 +75,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = onMenuClick) {
                             Icon(
                                 Icons.Default.Menu,
                                 contentDescription = "Меню",
@@ -87,7 +89,7 @@ fun ProfileScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = White
                         )
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = onNotificationsClick) {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = "Уведомления",
@@ -405,6 +407,8 @@ fun ProfileScreenPreview() {
             email = "kosinov@university.ru",
             university = "КФУ"
         ),
+        onMenuClick = {},
+        onNotificationsClick = {},
         onEditProfile = {},
         onUniversityContacts = {},
         onSupport = {},
