@@ -100,7 +100,12 @@ fun AppNavigation(
     onClearErrors: () -> Unit
 ) {
     val startDestination = if (isLoggedIn) Screen.Schedule.route else Screen.Login.route
-    val studyDataRepository = remember { StudyDataRepository(navController.context) }
+    val studyDataRepository = remember(user.email) {
+        StudyDataRepository(
+            context = navController.context,
+            accountScope = user.email.ifBlank { "guest" }
+        )
+    }
     val coroutineScope = rememberCoroutineScope()
     val tasks by studyDataRepository.tasksFlow.collectAsState(initial = defaultTasks())
     val schedule by studyDataRepository.scheduleFlow.collectAsState(initial = defaultSchedule())

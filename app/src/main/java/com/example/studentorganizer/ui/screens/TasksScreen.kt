@@ -17,6 +17,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,10 +40,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.rememberDatePickerState
 import com.example.studentorganizer.data.model.TaskItem
 import com.example.studentorganizer.ui.theme.DeepBlue
 import com.example.studentorganizer.ui.theme.LightBlue
 import com.example.studentorganizer.ui.theme.White
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,6 +148,12 @@ private fun TaskEditorDialog(
     var deadline by remember(task.id) { mutableStateOf(task.deadline) }
     var priority by remember(task.id) { mutableStateOf(task.priority) }
     var repeat by remember(task.id) { mutableStateOf(task.repeatMode) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showPriorityMenu by remember { mutableStateOf(false) }
+    var showRepeatMenu by remember { mutableStateOf(false) }
+    val priorityOptions = listOf("Низкий", "Средний", "Высокий")
+    val repeatOptions = listOf("Нет", "Ежедневно", "Еженедельно")
+    val dateState = rememberDatePickerState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -148,9 +162,59 @@ private fun TaskEditorDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Название") })
                 OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Предмет") })
-                OutlinedTextField(value = deadline, onValueChange = { deadline = it }, label = { Text("Дедлайн") })
-                OutlinedTextField(value = priority, onValueChange = { priority = it }, label = { Text("Приоритет") })
-                OutlinedTextField(value = repeat, onValueChange = { repeat = it }, label = { Text("Повтор") })
+                OutlinedTextField(
+                    value = deadline,
+                    onValueChange = {},
+                    label = { Text("Дедлайн") },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
+                )
+                Row {
+                    OutlinedTextField(
+                        value = priority,
+                        onValueChange = {},
+                        label = { Text("Приоритет") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showPriorityMenu = true }
+                    )
+                    DropdownMenu(expanded = showPriorityMenu, onDismissRequest = { showPriorityMenu = false }) {
+                        priorityOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    priority = option
+                                    showPriorityMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Row {
+                    OutlinedTextField(
+                        value = repeat,
+                        onValueChange = {},
+                        label = { Text("Повтор") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showRepeatMenu = true }
+                    )
+                    DropdownMenu(expanded = showRepeatMenu, onDismissRequest = { showRepeatMenu = false }) {
+                        repeatOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    repeat = option
+                                    showRepeatMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -162,4 +226,23 @@ private fun TaskEditorDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
     )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = dateState.selectedDateMillis
+                    if (millis != null) {
+                        val formatted = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(millis))
+                        deadline = formatted
+                    }
+                    showDatePicker = false
+                }) { Text("Ок") }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Отмена") } }
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
 }

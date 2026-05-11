@@ -17,10 +17,15 @@ import org.json.JSONObject
 
 private val Context.studyDataStore by preferencesDataStore(name = "study_data")
 
-class StudyDataRepository(private val context: Context) {
-    private val tasksKey = stringPreferencesKey("tasks_json")
-    private val scheduleKey = stringPreferencesKey("schedule_json")
-    private val notesKey = stringPreferencesKey("notes_json")
+class StudyDataRepository(
+    private val context: Context,
+    private val accountScope: String
+) {
+    private val normalizedScope = accountScope.ifBlank { "guest" }
+        .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+    private val tasksKey = stringPreferencesKey("tasks_json_$normalizedScope")
+    private val scheduleKey = stringPreferencesKey("schedule_json_$normalizedScope")
+    private val notesKey = stringPreferencesKey("notes_json_$normalizedScope")
 
     val tasksFlow: Flow<List<TaskItem>> = context.studyDataStore.data.map { prefs ->
         val raw = prefs[tasksKey]
