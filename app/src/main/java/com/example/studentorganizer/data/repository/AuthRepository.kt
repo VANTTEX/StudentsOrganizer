@@ -1,16 +1,20 @@
 package com.example.studentorganizer.data.repository
 
-import com.example.studentorganizer.data.api.LoginRequest
-import com.example.studentorganizer.data.api.RegisterRequest
-import com.example.studentorganizer.data.api.RetrofitClient
-import com.example.studentorganizer.data.api.UserDto
+import android.content.Context
+import android.net.Uri
+import com.example.studentorganizer.data.api.*
 import com.example.studentorganizer.data.storage.UserPreferencesRepository
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
 
 class AuthRepository(
-    private val api: com.example.studentorganizer.data.api.AuthApi = RetrofitClient.api,
+    private val api: AuthApi = RetrofitClient.api,
     private val prefsRepository: UserPreferencesRepository
 ) {
-    
+
     suspend fun register(
         email: String,
         password: String,
@@ -27,10 +31,10 @@ class AuthRepository(
                 institute = institute
             )
             val response = api.register(request)
-            
+
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
-                val user = body.user
+                val user = body.userDto
                 if (user != null) {
                     prefsRepository.saveUserFromServer(user)
                     prefsRepository.setLoggedIn(true)
@@ -51,15 +55,15 @@ class AuthRepository(
             Result.failure(Exception(e.message ?: "Неизвестная ошибка"))
         }
     }
-    
+
     suspend fun login(email: String, password: String): Result<UserDto> {
         return try {
             val request = LoginRequest(email = email, password = password)
             val response = api.login(request)
-            
+
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
-                val user = body.user
+                val user = body.userDto
                 if (user != null) {
                     prefsRepository.saveUserFromServer(user)
                     prefsRepository.setLoggedIn(true)
@@ -80,7 +84,96 @@ class AuthRepository(
             Result.failure(Exception(e.message ?: "Неизвестная ошибка"))
         }
     }
-    
+
+    suspend fun uploadAvatar(userId: Int, uri: Uri, context: Context): Result<String> {
+        return try {
+            // Конвертируем Uri во временный файл
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: return Result.failure(Exception("Не удалось открыть изображение"))
+
+            val tempFile = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(tempFile).use { out ->
+                inputStream.copyTo(out)
+            }
+
+            val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val avatarPart = MultipartBody.Part.createFormData("avatar", tempFile.name, requestFile)
+            val userIdPart = MultipartBody.Part.createFormData("userId", userId.toString())
+
+            val response = api.uploadAvatar(userIdPart, avatarPart)
+
+            if (response.isSuccessful) {
+                // Получаем URL аватарки из ответа сервера
+                val responseBody = response.body()
+                val avatarUrl = responseBody?.userDto?.avatarUrl
+                    ?: RetrofitClient.BASE_URL + "api/avatars/${tempFile.name}"
+                prefsRepository.updateAvatarUrl(avatarUrl)
+                tempFile.delete()
+                Result.success(avatarUrl)
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string())
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка загрузки аватарки"))
+        }
+    }
+
+    suspend fun getUniversities(): Result<List<UniversityDto>> {
+        return try {
+            val response = api.getUniversities()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Ошибка загрузки списка ВУЗов"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка загрузки ВУЗов"))
+        }
+    }
+
+    suspend fun searchUniversities(query: String): Result<List<UniversityDto>> {
+        return try {
+            val response = api.searchUniversities(query)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Ошибка поиска ВУЗов"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка поиска"))
+        }
+    }
+
+    suspend fun addFriend(friendId: String, currentUserId: Int): Result<Unit> {
+        return try {
+            // TODO: добавить userId текущего пользователя
+            val request = AddFriendRequest(friendId)
+            val response = api.addFriend(request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string())
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка добавления друга"))
+        }
+    }
+
+    suspend fun getFriends(userId: Int): Result<List<FriendDto>> {
+        return try {
+            val response = api.getFriends(userId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Ошибка загрузки списка друзей"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка загрузки друзей"))
+        }
+    }
+
     private fun parseErrorMessage(errorBody: String?): String {
         return try {
             if (errorBody != null) {

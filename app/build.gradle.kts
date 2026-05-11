@@ -62,6 +62,9 @@ dependencies {
     
     // OkHttp logging interceptor
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Image loading - Coil
+    implementation("io.coil-kt:coil-compose:2.6.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

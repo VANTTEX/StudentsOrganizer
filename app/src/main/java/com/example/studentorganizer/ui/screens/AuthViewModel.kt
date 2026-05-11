@@ -1,10 +1,13 @@
 package com.example.studentorganizer.ui.screens
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.studentorganizer.data.api.UniversityDto
 import com.example.studentorganizer.data.model.User
 import com.example.studentorganizer.data.repository.AuthRepository
 import com.example.studentorganizer.data.repository.ValidationUtil
@@ -35,6 +38,20 @@ class AuthViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Аватарка
+    private val _isUploadingAvatar = MutableStateFlow(false)
+    val isUploadingAvatar: StateFlow<Boolean> = _isUploadingAvatar.asStateFlow()
+
+    private val _avatarError = MutableStateFlow<String?>(null)
+    val avatarError: StateFlow<String?> = _avatarError.asStateFlow()
+
+    // ВУЗы
+    private val _universities = MutableStateFlow<List<UniversityDto>>(emptyList())
+    val universities: StateFlow<List<UniversityDto>> = _universities.asStateFlow()
+
+    private val _isSearchingUniversities = MutableStateFlow(false)
+    val isSearchingUniversities: StateFlow<Boolean> = _isSearchingUniversities.asStateFlow()
+
     init {
         viewModelScope.launch {
             prefsRepository.isLoggedInFlow.collect { loggedIn ->
@@ -46,6 +63,8 @@ class AuthViewModel(
                 _user.value = user
             }
         }
+        // Загружаем список ВУЗов при инициализации
+        loadUniversities()
     }
 
     fun login(email: String, password: String) {
@@ -129,6 +148,60 @@ class AuthViewModel(
         }
     }
 
+    fun uploadAvatar(uri: Uri, context: Context) {
+        viewModelScope.launch {
+            val currentUser = _user.value
+            if (currentUser.id == 0) {
+                _avatarError.value = "Пользователь не авторизован"
+                return@launch
+            }
+
+            _isUploadingAvatar.value = true
+            _avatarError.value = null
+
+            val result = repository.uploadAvatar(currentUser.id, uri, context)
+            _isUploadingAvatar.value = false
+
+            result.fold(
+                onSuccess = { avatarUrl ->
+                    // Обновляем user с новым avatarUrl
+                    _user.value = currentUser.copy(avatarUrl = avatarUrl)
+                },
+                onFailure = { _avatarError.value = it.message }
+            )
+        }
+    }
+
+    fun loadUniversities() {
+        viewModelScope.launch {
+            _isSearchingUniversities.value = true
+            val result = repository.getUniversities()
+            _isSearchingUniversities.value = false
+
+            result.fold(
+                onSuccess = { _universities.value = it },
+                onFailure = { /* Тихо игнорируем, ВУЗы не критичны */ }
+            )
+        }
+    }
+
+    fun searchUniversities(query: String) {
+        if (query.isBlank()) {
+            loadUniversities()
+            return
+        }
+        viewModelScope.launch {
+            _isSearchingUniversities.value = true
+            val result = repository.searchUniversities(query)
+            _isSearchingUniversities.value = false
+
+            result.fold(
+                onSuccess = { _universities.value = it },
+                onFailure = { /* Тихо игнорируем */ }
+            )
+        }
+    }
+
     suspend fun getUserData(): User {
         return prefsRepository.userFlow.first()
     }
@@ -142,6 +215,7 @@ class AuthViewModel(
     fun clearErrors() {
         _loginError.value = null
         _registerError.value = null
+        _avatarError.value = null
     }
 
     companion object {

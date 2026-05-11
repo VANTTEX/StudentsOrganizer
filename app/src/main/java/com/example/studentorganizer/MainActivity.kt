@@ -38,6 +38,8 @@ class MainActivity : ComponentActivity() {
                 val loginError by viewModel.loginError.collectAsState()
                 val registerError by viewModel.registerError.collectAsState()
                 val isLoading by viewModel.isLoading.collectAsState()
+                val isUploadingAvatar by viewModel.isUploadingAvatar.collectAsState()
+                val universities by viewModel.universities.collectAsState()
 
                 AppNavigation(
                     navController = navController,
@@ -46,9 +48,13 @@ class MainActivity : ComponentActivity() {
                     loginError = loginError,
                     registerError = registerError,
                     isLoading = isLoading,
+                    isUploadingAvatar = isUploadingAvatar,
+                    universities = universities,
                     onLogin = viewModel::login,
                     onRegister = viewModel::register,
                     onUpdateProfile = viewModel::updateProfile,
+                    onAvatarSelected = { uri -> viewModel.uploadAvatar(uri, this@MainActivity) },
+                    onSearchUniversities = viewModel::searchUniversities,
                     onLogout = viewModel::logout,
                     onClearErrors = viewModel::clearErrors
                 )
@@ -65,9 +71,13 @@ fun AppNavigation(
     loginError: String?,
     registerError: String?,
     isLoading: Boolean,
+    isUploadingAvatar: Boolean = false,
+    universities: List<com.example.studentorganizer.data.api.UniversityDto> = emptyList(),
     onLogin: (String, String) -> Unit,
     onRegister: (String, String, String, String?, String?, String) -> Unit,
     onUpdateProfile: (com.example.studentorganizer.data.model.User) -> Unit,
+    onAvatarSelected: (android.net.Uri) -> Unit = {},
+    onSearchUniversities: (String) -> Unit = {},
     onLogout: () -> Unit,
     onClearErrors: () -> Unit
 ) {
@@ -133,7 +143,11 @@ fun AppNavigation(
                 user = user,
                 onSave = onUpdateProfile,
                 onNavigateBack = { navController.popBackStack() },
-                onSuccess = { navController.popBackStack() }
+                onSuccess = { navController.popBackStack() },
+                onAvatarSelected = onAvatarSelected,
+                universities = universities,
+                onSearchUniversities = onSearchUniversities,
+                isUploadingAvatar = isUploadingAvatar
             )
         }
 

@@ -2,6 +2,9 @@ package com.example.auth
 
 import com.example.auth.database.DatabaseFactory
 import com.example.auth.routing.registerAuthRoutes
+import com.example.auth.routing.registerAvatarRoutes
+import com.example.auth.routing.registerFriendRoutes
+import com.example.auth.routing.registerUniversityRoutes
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -36,7 +39,10 @@ fun Application.module() {
     // Роуты
     routing {
         registerAuthRoutes()
-        
+        registerAvatarRoutes()
+        registerFriendRoutes()
+        registerUniversityRoutes()
+
         // Health check
         get("/health") {
             call.respond(mapOf("status" to "ok"))
