@@ -22,6 +22,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -171,17 +174,24 @@ private fun TaskEditorDialog(
                         .fillMaxWidth()
                         .clickable { showDatePicker = true }
                 )
-                Row {
+                ExposedDropdownMenuBox(
+                    expanded = showPriorityMenu,
+                    onExpandedChange = { showPriorityMenu = !showPriorityMenu }
+                ) {
                     OutlinedTextField(
                         value = priority,
                         onValueChange = {},
-                        label = { Text("Приоритет") },
                         readOnly = true,
+                        label = { Text("Приоритет") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showPriorityMenu) },
                         modifier = Modifier
-                            .weight(1f)
-                            .clickable { showPriorityMenu = true }
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
-                    DropdownMenu(expanded = showPriorityMenu, onDismissRequest = { showPriorityMenu = false }) {
+                    ExposedDropdownMenu(
+                        expanded = showPriorityMenu,
+                        onDismissRequest = { showPriorityMenu = false }
+                    ) {
                         priorityOptions.forEach { option ->
                             DropdownMenuItem(
                                 text = { Text(option) },
@@ -193,17 +203,24 @@ private fun TaskEditorDialog(
                         }
                     }
                 }
-                Row {
+                ExposedDropdownMenuBox(
+                    expanded = showRepeatMenu,
+                    onExpandedChange = { showRepeatMenu = !showRepeatMenu }
+                ) {
                     OutlinedTextField(
                         value = repeat,
                         onValueChange = {},
-                        label = { Text("Повтор") },
                         readOnly = true,
+                        label = { Text("Повтор") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showRepeatMenu) },
                         modifier = Modifier
-                            .weight(1f)
-                            .clickable { showRepeatMenu = true }
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
-                    DropdownMenu(expanded = showRepeatMenu, onDismissRequest = { showRepeatMenu = false }) {
+                    ExposedDropdownMenu(
+                        expanded = showRepeatMenu,
+                        onDismissRequest = { showRepeatMenu = false }
+                    ) {
                         repeatOptions.forEach { option ->
                             DropdownMenuItem(
                                 text = { Text(option) },

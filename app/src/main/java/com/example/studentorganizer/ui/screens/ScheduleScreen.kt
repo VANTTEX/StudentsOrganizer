@@ -17,14 +17,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -53,7 +55,9 @@ fun ScheduleScreen(
     onSubjectClick: (String) -> Unit
 ) {
     var selectedWeek by remember { mutableStateOf("Верхняя") }
+    var showWeekMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ScheduleItem?>(null) }
+    val weekOptions = listOf("Верхняя", "Нижняя")
     val filtered = lessons.filter { it.weekType == selectedWeek }
 
     Scaffold(
@@ -80,17 +84,34 @@ fun ScheduleScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = selectedWeek == "Верхняя",
-                        onClick = { selectedWeek = "Верхняя" },
-                        shape = RoundedCornerShape(10.dp)
-                    ) { Text("Верхняя") }
-                    SegmentedButton(
-                        selected = selectedWeek == "Нижняя",
-                        onClick = { selectedWeek = "Нижняя" },
-                        shape = RoundedCornerShape(10.dp)
-                    ) { Text("Нижняя") }
+                ExposedDropdownMenuBox(
+                    expanded = showWeekMenu,
+                    onExpandedChange = { showWeekMenu = !showWeekMenu }
+                ) {
+                    OutlinedTextField(
+                        value = selectedWeek,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Неделя") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showWeekMenu) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showWeekMenu,
+                        onDismissRequest = { showWeekMenu = false }
+                    ) {
+                        weekOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    selectedWeek = option
+                                    showWeekMenu = false
+                                }
+                            )
+                        }
+                    }
                 }
             }
             items(filtered) { item ->
@@ -133,6 +154,7 @@ private fun ScheduleEditorDialog(
     onSave: (ScheduleItem) -> Unit
 ) {
     var weekType by remember(item.id) { mutableStateOf(item.weekType) }
+    var showWeekTypeMenu by remember { mutableStateOf(false) }
     var time by remember(item.id) { mutableStateOf(item.time) }
     var subject by remember(item.id) { mutableStateOf(item.subject) }
     var place by remember(item.id) { mutableStateOf(item.place) }
@@ -142,7 +164,35 @@ private fun ScheduleEditorDialog(
         title = { Text(if (item.time.isBlank()) "Новая пара" else "Редактировать пару") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = weekType, onValueChange = { weekType = it }, label = { Text("Неделя") })
+                ExposedDropdownMenuBox(
+                    expanded = showWeekTypeMenu,
+                    onExpandedChange = { showWeekTypeMenu = !showWeekTypeMenu }
+                ) {
+                    OutlinedTextField(
+                        value = weekType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Неделя") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showWeekTypeMenu) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showWeekTypeMenu,
+                        onDismissRequest = { showWeekTypeMenu = false }
+                    ) {
+                        listOf("Верхняя", "Нижняя").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    weekType = option
+                                    showWeekTypeMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(value = time, onValueChange = { time = it }, label = { Text("Время") })
                 OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Предмет") })
                 OutlinedTextField(value = place, onValueChange = { place = it }, label = { Text("Место") })
