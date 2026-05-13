@@ -161,44 +161,6 @@ fun Route.registerAvatarRoutes() {
     }
 }
 
-fun Route.registerFriendRoutes() {
-    route("/api/friends") {
-        post("/add") {
-            val request = call.receive<AddFriendRequest>()
-
-            if (request.friendId.isBlank()) {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("friendId обязателен"))
-                return@post
-            }
-
-            val friend = UserRepository.findByFriendId(request.friendId)
-            if (friend == null) {
-                call.respond(HttpStatusCode.NotFound, ErrorResponse("Пользователь с таким ID не найден"))
-                return@post
-            }
-
-            call.respond(HttpStatusCode.OK, SuccessResponse("Заявка отправлена"))
-        }
-
-        get("/list") {
-            val userIdParam = call.request.queryParameters["userId"]
-            if (userIdParam == null) {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Требуется userId"))
-                return@get
-            }
-
-            val userId = userIdParam.toIntOrNull()
-            if (userId == null) {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Некорректный userId"))
-                return@get
-            }
-
-            val friends = UserRepository.getFriendships(userId)
-            call.respond(HttpStatusCode.OK, friends)
-        }
-    }
-}
-
 fun Route.registerUniversityRoutes() {
     route("/api/universities") {
         get {

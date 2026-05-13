@@ -1,22 +1,45 @@
+```
+# Kotlin/Java build artifacts
+*.class
+*.jar
+*.war
+*.ear
+*.aar
+
+# Gradle
+.gradle/
+build/
+.libs/
+
+# Android specific
+*.apk
+*.ap_
+app/build/
+
+# Kotlin specific
+*.kotlin_metadata
+
+# IDE files
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+*.ipr
+*.iws
 
-# Server
-/server/avatars/
-/server/universities.json
+# Logs
+*.log
 
-# Large files
-*.hprof
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Temporary files
+*.tmp
+*.swp
+*~
+```

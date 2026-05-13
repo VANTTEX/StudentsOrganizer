@@ -23,7 +23,6 @@ data class LoginRequest(
 @Serializable
 data class UserResponse(
     val id: Int,
-    val friendId: String,
     val email: String,
     val fullName: String,
     val course: String?,
@@ -43,23 +42,4 @@ data class ErrorResponse(
 data class SuccessResponse(
     val message: String,
     val user: UserResponse? = null
-)
-
-// Запрос добавления друга
-@Serializable
-data class AddFriendRequest(
-    val friendId: String
-)
-
-// Ответ с данными друга
-@Serializable
-data class FriendResponse(
-    val userId: Int,
-    val friendId: String,
-    val fullName: String,
-    val email: String,
-    val course: String?,
-    val institute: String?,
-    val avatarUrl: String?,
-    val status: String
 )

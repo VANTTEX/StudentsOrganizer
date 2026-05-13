@@ -32,6 +32,7 @@ object DatabaseFactory {
                 full_name VARCHAR(255) NOT NULL,
                 course VARCHAR(50),
                 institute VARCHAR(255),
+                avatar_filename VARCHAR(500),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """.trimIndent()

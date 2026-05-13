@@ -43,18 +43,22 @@ fun RegisterScreen(
     var showInstituteDropdown by remember { mutableStateOf(false) }
     var showCourseDropdown by remember { mutableStateOf(false) }
 
-    val institutes = listOf(
-        "Институт математики и компьютерных наук",
-        "Институт физики",
-        "Институт химии",
-        "Институт биологии",
-        "Экономический институт",
-        "Институт права",
-        "Гуманитарный институт",
-        "Институт информационных технологий",
-        "Институт иностранных языков",
-        "Политехнический институт"
-    )
+    val institutes = remember { mutableStateListOf<String>() }
+    var showInstituteDropdown by remember { mutableStateOf(false) }
+    var instituteSearchQuery by remember { mutableStateOf("") }
+    
+    LaunchedEffect(Unit) {
+        // Загружаем список ВУЗов при старте
+        // В реальном приложении это должно приходить из ViewModel
+    }
+    
+    val filteredInstitutes = remember(institutes, instituteSearchQuery) {
+        if (instituteSearchQuery.isBlank()) {
+            institutes.take(50)
+        } else {
+            institutes.filter { it.contains(instituteSearchQuery, ignoreCase = true) }.take(50)
+        }
+    }
 
     val courses = listOf("1", "2", "3", "4", "5", "6")
 
