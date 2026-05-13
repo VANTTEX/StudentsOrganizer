@@ -53,6 +53,34 @@ fun Route.registerAuthRoutes() {
             call.respond(HttpStatusCode.Created, SuccessResponse("Регистрация успешна", user))
         }
 
+        put("/profile") {
+            val request = call.receive<UpdateProfileRequest>()
+
+            val fullNameError = ValidationUtil.validateFullName(request.fullName)
+            if (fullNameError != null) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse(fullNameError, "fullName"))
+                return@put
+            }
+
+            val existing = UserRepository.findById(request.userId)
+            if (existing == null) {
+                call.respond(HttpStatusCode.NotFound, ErrorResponse("Пользователь не найден"))
+                return@put
+            }
+
+            val updated = UserRepository.updateProfile(
+                userId = request.userId,
+                fullName = request.fullName,
+                course = request.course,
+                institute = request.institute
+            )
+            if (updated != null) {
+                call.respond(HttpStatusCode.OK, SuccessResponse("Профиль обновлён", updated))
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Ошибка обновления профиля"))
+            }
+        }
+
         post("/login") {
             val request = call.receive<LoginRequest>()
 
@@ -135,7 +163,7 @@ fun Route.registerAvatarRoutes() {
 
             val oldFilename = UserRepository.getAvatarFilename(userId!!)
             if (oldFilename != null) {
-                File(avatarsDir, oldFilename).delete()
+                File(avatarsDir, java.io.File(oldFilename).name).delete()
             }
 
             val avatarUrl = UserRepository.updateAvatar(userId!!, uniqueFileName)
@@ -156,7 +184,7 @@ fun Route.registerAvatarRoutes() {
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("Файл не найден"))
                 return@get
             }
-            call.respond(file)
+            call.respond(file.readBytes())
         }
     }
 }

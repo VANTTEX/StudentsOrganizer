@@ -20,7 +20,8 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(
     private val repository: AuthRepository,
-    private val prefsRepository: UserPreferencesRepository
+    private val prefsRepository: UserPreferencesRepository,
+    private val appContext: Context
 ) : ViewModel() {
 
     private val _user = MutableStateFlow(User())
@@ -48,6 +49,29 @@ class AuthViewModel(
     // ВУЗы
     private val _universities = MutableStateFlow<List<UniversityDto>>(emptyList())
     val universities: StateFlow<List<UniversityDto>> = _universities.asStateFlow()
+
+    private val hardcodedUniversities = listOf(
+        UniversityDto("Московский государственный университет им. М.В.Ломоносова", "Москва", "Государственный вуз", null, null, null, null),
+        UniversityDto("Санкт-Петербургский государственный университет", "Санкт-Петербург", "Государственный вуз", null, null, null, null),
+        UniversityDto("Новосибирский национальный исследовательский государственный университет", "Новосибирск", "Государственный вуз", null, null, null, null),
+        UniversityDto("Национальный исследовательский университет ИТМО", "Санкт-Петербург", "Государственный вуз", null, null, null, null),
+        UniversityDto("Казанский (Приволжский) федеральный университет", "Казань", "Государственный вуз", null, null, null, null),
+        UniversityDto("Московский физико-технический институт", "Москва", "Государственный вуз", null, null, null, null),
+        UniversityDto("Национальный исследовательский ядерный университет МИФИ", "Москва", "Государственный вуз", null, null, null, null),
+        UniversityDto("Московский государственный технический университет им. Н.Э.Баумана", "Москва", "Государственный вуз", null, null, null, null),
+        UniversityDto("Санкт-Петербургский политехнический университет Петра Великого", "Санкт-Петербург", "Государственный вуз", null, null, null, null),
+        UniversityDto("Уральский федеральный университет им. Б.Н.Ельцина", "Екатеринбург", "Государственный вуз", null, null, null, null),
+        UniversityDto("Казанский национальный исследовательский технический университет им. А.Н.Туполева", "Казань", "Государственный вуз", null, null, null, null),
+        UniversityDto("Самарский национальный исследовательский университет им. С.П.Королева", "Самара", "Государственный вуз", null, null, null, null),
+        UniversityDto("Дальневосточный федеральный университет", "Владивосток", "Государственный вуз", null, null, null, null),
+        UniversityDto("Сибирский федеральный университет", "Красноярск", "Государственный вуз", null, null, null, null),
+        UniversityDto("Южный федеральный университет", "Ростов-на-Дону", "Государственный вуз", null, null, null, null),
+        UniversityDto("Крымский федеральный университет им. В.И.Вернадского", "Симферополь", "Государственный вуз", null, null, null, null),
+        UniversityDto("Национальный исследовательский Нижегородский государственный университет им. Н.И.Лобачевского", "Нижний Новгород", "Государственный вуз", null, null, null, null),
+        UniversityDto("Воронежский государственный университет", "Воронеж", "Государственный вуз", null, null, null, null),
+        UniversityDto("Томский государственный университет", "Томск", "Государственный вуз", null, null, null, null),
+        UniversityDto("Томский политехнический университет", "Томск", "Государственный вуз", null, null, null, null),
+    )
 
     private val _isSearchingUniversities = MutableStateFlow(false)
     val isSearchingUniversities: StateFlow<Boolean> = _isSearchingUniversities.asStateFlow()
@@ -145,6 +169,11 @@ class AuthViewModel(
     fun updateProfile(user: User) {
         viewModelScope.launch {
             prefsRepository.updateUser(user)
+            val result = repository.updateProfileOnServer(user)
+            result.fold(
+                onSuccess = { _user.value = user },
+                onFailure = { _avatarError.value = it.message }
+            )
         }
     }
 
@@ -175,13 +204,46 @@ class AuthViewModel(
     fun loadUniversities() {
         viewModelScope.launch {
             _isSearchingUniversities.value = true
-            val result = repository.getUniversities()
-            _isSearchingUniversities.value = false
 
+            val result = repository.getUniversities()
             result.fold(
-                onSuccess = { _universities.value = it },
-                onFailure = { /* Тихо игнорируем, ВУЗы не критичны */ }
+                onSuccess = {
+                    _universities.value = it
+                    _isSearchingUniversities.value = false
+                    return@launch
+                },
+                onFailure = { /* пробуем загрузить локально */ }
             )
+
+            // Fallback: читаем universities.json из assets
+            try {
+                val inputStream = appContext.assets.open("universities.json")
+                val json = inputStream.bufferedReader().use { it.readText() }
+                val jsonArray = org.json.JSONArray(json)
+                val list = mutableListOf<UniversityDto>()
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    list.add(UniversityDto(
+                        name = obj.getString("name"),
+                        city = obj.getString("city"),
+                        type = obj.optString("type", ""),
+                        website = if (obj.isNull("website")) null else obj.getString("website"),
+                        phone = if (obj.isNull("phone")) null else obj.getString("phone"),
+                        email = if (obj.isNull("email")) null else obj.getString("email"),
+                        address = if (obj.isNull("address")) null else obj.getString("address")
+                    ))
+                }
+                _universities.value = list
+            } catch (e: Exception) {
+                // ВУЗы не критичны
+            }
+
+            // Если ничего не загрузилось — используем запасной список
+            if (_universities.value.isEmpty()) {
+                _universities.value = hardcodedUniversities
+            }
+
+            _isSearchingUniversities.value = false
         }
     }
 
@@ -221,10 +283,11 @@ class AuthViewModel(
     companion object {
         fun factory(
             repository: AuthRepository,
-            prefsRepository: UserPreferencesRepository
+            prefsRepository: UserPreferencesRepository,
+            appContext: Context
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                AuthViewModel(repository, prefsRepository)
+                AuthViewModel(repository, prefsRepository, appContext)
             }
         }
     }

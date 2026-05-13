@@ -100,16 +100,33 @@ object UserRepository {
     }
 
     fun updateAvatar(userId: Int, filename: String): String? {
+        val avatarPath = "/api/avatars/$filename"
         val sql = "UPDATE users SET avatar_filename = ? WHERE id = ?"
         DatabaseFactory.getConnection().use { conn ->
             conn.prepareStatement(sql).use { stmt ->
-                stmt.setString(1, filename)
+                stmt.setString(1, avatarPath)
                 stmt.setInt(2, userId)
                 return if (stmt.executeUpdate() > 0) {
-                    "http://127.0.0.1:8080/$filename"
+                    avatarPath
                 } else null
             }
         }
+    }
+
+    fun updateProfile(userId: Int, fullName: String, course: String?, institute: String?): UserResponse? {
+        val sql = "UPDATE users SET full_name = ?, course = ?, institute = ? WHERE id = ?"
+        DatabaseFactory.getConnection().use { conn ->
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, fullName.trim())
+                stmt.setObject(2, course?.trim())
+                stmt.setObject(3, institute?.trim())
+                stmt.setInt(4, userId)
+                if (stmt.executeUpdate() > 0) {
+                    return findById(userId)
+                }
+            }
+        }
+        return null
     }
 
     fun getAvatarFilename(userId: Int): String? {
@@ -129,13 +146,18 @@ object UserRepository {
 
     private fun mapToUserResponse(rs: ResultSet): UserResponse {
         val avatarFilename = rs.getString("avatar_filename")
+        val avatarUrl = when {
+            avatarFilename == null -> null
+            avatarFilename.startsWith("/api/") -> avatarFilename
+            else -> "/api/avatars/$avatarFilename"
+        }
         return UserResponse(
             id = rs.getInt("id"),
             email = rs.getString("email"),
             fullName = rs.getString("full_name"),
             course = rs.getString("course"),
             institute = rs.getString("institute"),
-            avatarUrl = avatarFilename // Возвращаем только имя файла, клиент построит URL
+            avatarUrl = avatarUrl
         )
     }
 }

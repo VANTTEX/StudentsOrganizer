@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,17 +41,31 @@ fun EditProfileScreen(
     onAvatarSelected: (Uri) -> Unit = {},
     universities: List<UniversityDto> = emptyList(),
     onSearchUniversities: (String) -> Unit = {},
-    isUploadingAvatar: Boolean = false
+    isUploadingAvatar: Boolean = false,
+    avatarErrorMessage: String? = null,
+    onAvatarErrorCleared: () -> Unit = {}
 ) {
     var fullName by remember { mutableStateOf(user.fullName) }
     var faculty by remember { mutableStateOf(user.faculty) }
     var course by remember { mutableStateOf(user.course) }
     var university by remember { mutableStateOf(user.university) }
     var showCourseDropdown by remember { mutableStateOf(false) }
-    var showUniversityDropdown by remember { mutableStateOf(false) }
     var universitySearchQuery by remember { mutableStateOf("") }
 
+    val snackbarHostState = remember { SnackbarHostState() }
     val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс", "6 курс")
+
+    LaunchedEffect(isUploadingAvatar) {
+        if (!isUploadingAvatar && avatarErrorMessage == null && user.avatarUrl.isNotBlank()) {
+            snackbarHostState.showSnackbar("Аватарка загружена")
+        }
+    }
+    LaunchedEffect(avatarErrorMessage) {
+        avatarErrorMessage?.let {
+            snackbarHostState.showSnackbar("Ошибка: $it")
+            onAvatarErrorCleared()
+        }
+    }
 
     // Лаунчер для выбора изображения
     val avatarPickerLauncher = rememberLauncherForActivityResult(
@@ -60,15 +75,13 @@ fun EditProfileScreen(
     }
 
     // Фильтрация ВУЗов по поиску
-    val filteredUniversities = remember(universities, universitySearchQuery) {
-        if (universitySearchQuery.isBlank()) {
-            universities.take(50) // Показываем первые 50
-        } else {
-            universities.filter {
-                it.name.contains(universitySearchQuery, ignoreCase = true) ||
-                it.city.contains(universitySearchQuery, ignoreCase = true)
-            }.take(50)
-        }
+    val filteredUniversities = if (universitySearchQuery.isBlank()) {
+        universities.take(50)
+    } else {
+        universities.filter {
+            it.name.contains(universitySearchQuery, ignoreCase = true) ||
+            it.city.contains(universitySearchQuery, ignoreCase = true)
+        }.take(50)
     }
 
     Scaffold(
@@ -86,7 +99,8 @@ fun EditProfileScreen(
                     navigationIconContentColor = White
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -227,7 +241,12 @@ fun EditProfileScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Курс (Dropdown)
-                        Box {
+                        Box(
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { showCourseDropdown = true }
+                        ) {
                             OutlinedTextField(
                                 value = course,
                                 onValueChange = {},
@@ -236,7 +255,11 @@ fun EditProfileScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 readOnly = true,
-                                trailingIcon = { Text("▼", color = DeepBlue) }
+                                trailingIcon = {
+                                    IconButton(onClick = { showCourseDropdown = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Выбрать курс", tint = DeepBlue)
+                                    }
+                                }
                             )
                             DropdownMenu(
                                 expanded = showCourseDropdown,
@@ -255,46 +278,49 @@ fun EditProfileScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // ВУЗ (TextField с поиском и Dropdown)
-                        OutlinedTextField(
-                            value = university,
-                            onValueChange = { 
-                                university = it
-                                universitySearchQuery = it
-                                onSearchUniversities(it)
-                                showUniversityDropdown = true
-                            },
-                            label = { Text("ВУЗ (поиск)") },
-                            leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true,
-                            trailingIcon = {
-                                IconButton(onClick = { showUniversityDropdown = !showUniversityDropdown }) {
-                                    Icon(Icons.Default.Search, contentDescription = "Поиск", tint = DeepBlue)
-                                }
-                            }
-                        )
+                        // ВУЗ (поиск с подсказками)
+                        Column {
+                            OutlinedTextField(
+                                value = university,
+                                onValueChange = {
+                                    university = it
+                                    universitySearchQuery = it
+                                },
+                                label = { Text("ВУЗ (поиск)") },
+                                placeholder = { if (university.isBlank()) Text("Вуз не выбран", color = Color(0xFFB0B0B0)) },
+                                leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true
+                            )
 
-                        DropdownMenu(
-                            expanded = showUniversityDropdown && filteredUniversities.isNotEmpty(),
-                            onDismissRequest = { showUniversityDropdown = false },
-                            modifier = Modifier.heightIn(max = 300.dp)
-                        ) {
-                            filteredUniversities.forEach { u ->
-                                DropdownMenuItem(
-                                    text = { 
-                                        Column {
-                                            Text(u.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                            Text("${u.city}, ${u.type}", fontSize = 11.sp, color = Color.Gray)
+                            if (universitySearchQuery.isNotBlank() && filteredUniversities.isNotEmpty()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column {
+                                        filteredUniversities.forEach { u ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        university = u.name
+                                                        universitySearchQuery = ""
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text(u.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                    Text("${u.city}", fontSize = 11.sp, color = Color.Gray)
+                                                }
+                                            }
                                         }
-                                    },
-                                    onClick = {
-                                        university = u.name
-                                        universitySearchQuery = ""
-                                        showUniversityDropdown = false
                                     }
-                                )
+                                }
                             }
                         }
                     }

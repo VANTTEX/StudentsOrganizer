@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                 val authRepository = AuthRepository(prefsRepository = prefsRepository)
                 
                 val viewModel: AuthViewModel = viewModel {
-                    AuthViewModel(authRepository, prefsRepository)
+                    AuthViewModel(authRepository, prefsRepository, this@MainActivity)
                 }
 
                 val isLoggedIn by viewModel.isLoggedIn.collectAsState()
@@ -56,17 +56,18 @@ class MainActivity : ComponentActivity() {
                 val registerError by viewModel.registerError.collectAsState()
                 val isLoading by viewModel.isLoading.collectAsState()
                 val isUploadingAvatar by viewModel.isUploadingAvatar.collectAsState()
-                val universities by viewModel.universities.collectAsState()
+                val avatarError by viewModel.avatarError.collectAsState()
 
                 AppNavigation(
                     navController = navController,
+                    viewModel = viewModel,
                     isLoggedIn = isLoggedIn,
                     user = user,
                     loginError = loginError,
                     registerError = registerError,
                     isLoading = isLoading,
                     isUploadingAvatar = isUploadingAvatar,
-                    universities = universities,
+                    avatarError = avatarError,
                     onLogin = { email, password, _, _, _, _ ->
                         viewModel.login(email, password)
                     },
@@ -85,13 +86,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    viewModel: AuthViewModel,
     isLoggedIn: Boolean,
     user: com.example.studentorganizer.data.model.User,
     loginError: String?,
     registerError: String?,
     isLoading: Boolean,
     isUploadingAvatar: Boolean = false,
-    universities: List<com.example.studentorganizer.data.api.UniversityDto> = emptyList(),
+    avatarError: String? = null,
     onLogin: (String, String, String, String?, String?, String) -> Unit,
     onRegister: (String, String, String, String?, String?, String) -> Unit,
     onUpdateProfile: (com.example.studentorganizer.data.model.User) -> Unit,
@@ -141,6 +143,7 @@ fun AppNavigation(
         }
 
         composable(Screen.Register.route) {
+            val universities by viewModel.universities.collectAsState()
             RegisterScreen(
                 onRegister = onRegister,
                 onNavigateToLogin = {
@@ -150,7 +153,8 @@ fun AppNavigation(
                     }
                 },
                 error = registerError,
-                isLoading = isLoading
+                isLoading = isLoading,
+                universities = universities
             )
         }
 
@@ -237,6 +241,7 @@ fun AppNavigation(
         }
 
         composable(Screen.EditProfile.route) {
+            val universities by viewModel.universities.collectAsState()
             EditProfileScreen(
                 user = user,
                 onSave = onUpdateProfile,
@@ -245,13 +250,17 @@ fun AppNavigation(
                 onAvatarSelected = onAvatarSelected,
                 universities = universities,
                 onSearchUniversities = onSearchUniversities,
-                isUploadingAvatar = isUploadingAvatar
+                isUploadingAvatar = isUploadingAvatar,
+                avatarErrorMessage = avatarError,
+                onAvatarErrorCleared = onClearErrors
             )
         }
 
         composable(Screen.UniversityContacts.route) {
+            val universities by viewModel.universities.collectAsState()
             UniversityContactsScreen(
                 user = user,
+                universities = universities,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

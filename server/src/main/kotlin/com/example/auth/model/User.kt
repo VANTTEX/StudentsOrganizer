@@ -30,6 +30,15 @@ data class UserResponse(
     val avatarUrl: String? = null
 )
 
+// Запрос обновления профиля
+@Serializable
+data class UpdateProfileRequest(
+    val userId: Int,
+    val fullName: String,
+    val course: String? = null,
+    val institute: String? = null
+)
+
 // Ответ с ошибкой
 @Serializable
 data class ErrorResponse(

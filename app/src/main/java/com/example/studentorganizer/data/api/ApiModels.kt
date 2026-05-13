@@ -15,6 +15,13 @@ data class LoginRequest(
     @SerializedName("password") val password: String
 )
 
+data class UpdateProfileRequest(
+    @SerializedName("userId") val userId: Int,
+    @SerializedName("fullName") val fullName: String,
+    @SerializedName("course") val course: String?,
+    @SerializedName("institute") val institute: String?
+)
+
 data class UserDto(
     @SerializedName("id") val id: Int,
     @SerializedName("email") val email: String,

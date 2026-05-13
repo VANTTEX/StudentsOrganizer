@@ -85,6 +85,32 @@ class AuthRepository(
         }
     }
 
+    suspend fun updateProfileOnServer(user: com.example.studentorganizer.data.model.User): Result<UserDto> {
+        return try {
+            val request = UpdateProfileRequest(
+                userId = user.id,
+                fullName = user.fullName,
+                course = user.course.ifEmpty { null },
+                institute = user.university.ifEmpty { null }
+            )
+            val response = api.updateProfile(request)
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                val userDto = body.userDto
+                if (userDto != null) {
+                    Result.success(userDto)
+                } else {
+                    Result.failure(Exception("Пустой ответ от сервера"))
+                }
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string())
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Ошибка обновления профиля"))
+        }
+    }
+
     suspend fun uploadAvatar(userId: Int, uri: Uri, context: Context): Result<String> {
         return try {
             // Конвертируем Uri во временный файл
@@ -103,10 +129,13 @@ class AuthRepository(
             val response = api.uploadAvatar(userIdPart, avatarPart)
 
             if (response.isSuccessful) {
-                // Получаем URL аватарки из ответа сервера
                 val responseBody = response.body()
-                val avatarUrl = responseBody?.userDto?.avatarUrl
-                    ?: RetrofitClient.BASE_URL + "api/avatars/${tempFile.name}"
+                val rawUrl = responseBody?.userDto?.avatarUrl
+                val avatarUrl = if (rawUrl != null) {
+                    RetrofitClient.BASE_URL.trimEnd('/') + rawUrl
+                } else {
+                    RetrofitClient.BASE_URL + "api/avatars/${tempFile.name}"
+                }
                 prefsRepository.updateAvatarUrl(avatarUrl)
                 tempFile.delete()
                 Result.success(avatarUrl)

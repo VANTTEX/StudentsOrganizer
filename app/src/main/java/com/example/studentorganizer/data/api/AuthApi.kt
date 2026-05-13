@@ -12,6 +12,10 @@ interface AuthApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<ServerResponse>
 
+    // Обновление профиля
+    @PUT("api/auth/profile")
+    suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<ServerResponse>
+
     // Аватарки
     @Multipart
     @POST("api/profile/avatar")

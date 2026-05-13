@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.studentorganizer.data.api.UserDto
@@ -17,6 +18,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "us
 class UserPreferencesRepository(private val context: Context) {
 
     companion object {
+        private val USER_ID = intPreferencesKey("user_id")
         private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
         private val FULL_NAME = stringPreferencesKey("full_name")
         private val EMAIL = stringPreferencesKey("email")
@@ -29,6 +31,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     val userFlow: Flow<User> = context.dataStore.data.map { prefs ->
         User(
+            id = prefs[USER_ID] ?: 0,
             fullName = prefs[FULL_NAME] ?: "",
             email = prefs[EMAIL] ?: "",
             password = prefs[PASSWORD] ?: "",
@@ -56,6 +59,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun saveUser(user: User) {
         context.dataStore.edit { prefs ->
+            prefs[USER_ID] = user.id
             prefs[FULL_NAME] = user.fullName
             prefs[EMAIL] = user.email
             prefs[PASSWORD] = user.password
@@ -69,6 +73,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun updateUser(user: User) {
         context.dataStore.edit { prefs ->
+            prefs[USER_ID] = user.id
             prefs[FULL_NAME] = user.fullName
             prefs[FACULTY] = user.faculty
             prefs[COURSE] = user.course
@@ -91,6 +96,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun saveUserFromServer(userDto: UserDto) {
         context.dataStore.edit { prefs ->
+            prefs[USER_ID] = userDto.id
             prefs[FULL_NAME] = userDto.fullName
             prefs[EMAIL] = userDto.email
             prefs[COURSE] = userDto.course ?: ""
@@ -98,7 +104,7 @@ class UserPreferencesRepository(private val context: Context) {
             // Пароль не сохраняем локально (он хеширован на сервере)
             prefs[PASSWORD] = ""
             prefs[FACULTY] = ""
-            prefs[AVATAR_URL] = ""
+            prefs[AVATAR_URL] = resolveAvatarUrl(userDto.avatarUrl)
         }
     }
 
@@ -116,13 +122,20 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun saveUserFromServer(userDto: UserDto, password: String = "") {
         context.dataStore.edit { prefs ->
+            prefs[USER_ID] = userDto.id
             prefs[FULL_NAME] = userDto.fullName
             prefs[EMAIL] = userDto.email
             prefs[COURSE] = userDto.course ?: ""
             prefs[UNIVERSITY] = userDto.institute ?: ""
             prefs[PASSWORD] = password
             prefs[FACULTY] = ""
-            prefs[AVATAR_URL] = userDto.avatarUrl ?: ""
+            prefs[AVATAR_URL] = resolveAvatarUrl(userDto.avatarUrl)
         }
+    }
+
+    private fun resolveAvatarUrl(url: String?): String {
+        if (url.isNullOrBlank()) return ""
+        if (url.startsWith("http")) return url
+        return com.example.studentorganizer.data.api.RetrofitClient.BASE_URL.trimEnd('/') + url
     }
 }

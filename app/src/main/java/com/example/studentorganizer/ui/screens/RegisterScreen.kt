@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
+import com.example.studentorganizer.data.api.UniversityDto
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +32,8 @@ fun RegisterScreen(
     onRegister: (String, String, String, String?, String?, String) -> Unit,
     onNavigateToLogin: () -> Unit,
     error: String?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    universities: List<UniversityDto> = emptyList()
 ) {
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -42,21 +43,15 @@ fun RegisterScreen(
     var institute by remember { mutableStateOf("") }
     var showCourseDropdown by remember { mutableStateOf(false) }
 
-    val institutes = remember { mutableStateListOf<String>() }
-    var showInstituteDropdown by remember { mutableStateOf(false) }
     var instituteSearchQuery by remember { mutableStateOf("") }
     
-    LaunchedEffect(Unit) {
-        // Загружаем список ВУЗов при старте
-        // В реальном приложении это должно приходить из ViewModel
-    }
-    
-    val filteredInstitutes = remember(institutes, instituteSearchQuery) {
-        if (instituteSearchQuery.isBlank()) {
-            institutes.take(50)
-        } else {
-            institutes.filter { it.contains(instituteSearchQuery, ignoreCase = true) }.take(50)
-        }
+    val filteredUniversities = if (instituteSearchQuery.isBlank()) {
+        universities.take(50)
+    } else {
+        universities.filter {
+            it.name.contains(instituteSearchQuery, ignoreCase = true) ||
+            it.city.contains(instituteSearchQuery, ignoreCase = true)
+        }.take(50)
     }
 
     val courses = listOf("1", "2", "3", "4", "5", "6")
@@ -200,36 +195,49 @@ fun RegisterScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Институт (опционально, Dropdown)
-                        Box {
+                        // Институт (опционально, с подсказками)
+                        Column {
                             OutlinedTextField(
                                 value = institute,
-                                onValueChange = {},
-                                label = { Text("Институт (по желанию)") },
-                                leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = !isLoading) { showInstituteDropdown = true },
-                                shape = RoundedCornerShape(12.dp),
-                                readOnly = true,
-                                trailingIcon = {
-                                    Text("▼", color = DeepBlue)
+                                onValueChange = {
+                                    institute = it
+                                    instituteSearchQuery = it
                                 },
+                                label = { Text("Институт (по желанию)") },
+                                placeholder = { if (institute.isBlank()) Text("Начните вводить название вуза", color = Color(0xFFB0B0B0)) },
+                                leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = DeepBlue) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
                                 enabled = !isLoading
                             )
-                            DropdownMenu(
-                                expanded = showInstituteDropdown,
-                                onDismissRequest = { showInstituteDropdown = false },
-                                modifier = Modifier.background(White)
-                            ) {
-                                institutes.forEach { inst ->
-                                    DropdownMenuItem(
-                                        text = { Text(inst, fontSize = 12.sp) },
-                                        onClick = {
-                                            institute = inst
-                                            showInstituteDropdown = false
+
+                            if (instituteSearchQuery.isNotBlank() && filteredUniversities.isNotEmpty()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column {
+                                        filteredUniversities.forEach { u ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        institute = u.name
+                                                        instituteSearchQuery = ""
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text(u.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                    Text(u.city, fontSize = 11.sp, color = Color.Gray)
+                                                }
+                                            }
                                         }
-                                    )
+                                    }
                                 }
                             }
                         }
