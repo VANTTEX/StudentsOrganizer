@@ -233,50 +233,6 @@ fun ProfileScreen(
             }
         }
 
-        // Карточка с Friend ID
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.QrCode,
-                            contentDescription = null,
-                            tint = DeepBlue,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Ваш ID для друзей",
-                                fontSize = 12.sp,
-                                color = Color(0xFF8892B0)
-                            )
-                            Text(
-                                text = user.friendId.ifEmpty { "— — —" },
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = DeepBlue
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // Меню навигации
         item {
             Spacer(modifier = Modifier.height(20.dp))

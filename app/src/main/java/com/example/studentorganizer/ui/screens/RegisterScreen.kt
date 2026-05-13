@@ -40,7 +40,6 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var course by remember { mutableStateOf("") }
     var institute by remember { mutableStateOf("") }
-    var showInstituteDropdown by remember { mutableStateOf(false) }
     var showCourseDropdown by remember { mutableStateOf(false) }
 
     val institutes = remember { mutableStateListOf<String>() }

@@ -106,7 +106,7 @@ object UserRepository {
                 stmt.setString(1, filename)
                 stmt.setInt(2, userId)
                 return if (stmt.executeUpdate() > 0) {
-                    "https://your-domain.com/avatars/$filename"
+                    "http://127.0.0.1:8080/$filename"
                 } else null
             }
         }

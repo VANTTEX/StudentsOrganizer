@@ -138,8 +138,8 @@ fun Route.registerAvatarRoutes() {
                 File(avatarsDir, oldFilename).delete()
             }
 
-            val success = UserRepository.updateAvatar(userId!!, uniqueFileName)
-            if (success) {
+            val avatarUrl = UserRepository.updateAvatar(userId!!, uniqueFileName)
+            if (avatarUrl != null) {
                 val updatedUser = UserRepository.findById(userId!!)
                 call.respond(HttpStatusCode.OK, SuccessResponse("Аватарка загружена", updatedUser))
             } else {
