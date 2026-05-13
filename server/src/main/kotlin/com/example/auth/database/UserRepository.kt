@@ -117,13 +117,15 @@ object UserRepository {
         }
     }
 
-    fun updateAvatar(userId: Int, filename: String): Boolean {
+    fun updateAvatar(userId: Int, filename: String): String? {
         val sql = "UPDATE users SET avatar_filename = ? WHERE id = ?"
         DatabaseFactory.getConnection().use { conn ->
             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, filename)
                 stmt.setInt(2, userId)
-                return stmt.executeUpdate() > 0
+                return if (stmt.executeUpdate() > 0) {
+                    "https://your-domain.com/avatars/$filename"
+                } else null
             }
         }
     }
