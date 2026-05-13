@@ -26,11 +26,4 @@ interface AuthApi {
 
     @GET("api/universities/search")
     suspend fun searchUniversities(@Query("q") query: String): Response<List<UniversityDto>>
-
-    // Друзья
-    @POST("api/friends/add")
-    suspend fun addFriend(@Body request: AddFriendRequest): Response<ServerResponse>
-
-    @GET("api/friends/list")
-    suspend fun getFriends(@Query("userId") userId: Int): Response<List<FriendDto>>
 }
